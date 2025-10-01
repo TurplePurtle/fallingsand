@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Falling Sand</title>
+    <style>
+      body {
+        background-color: #333;
+        color: #fff;
+      }
+      canvas {
+        border: 1px solid #888;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <span id="state">Paused</span>
+    <div>
+      <canvas id="my-canvas" width="320" height="240"></canvas>
+    </div>
+    <label>
+      Element type
+      <select id="element-type-select">
+        <option value="0">Air</option>
+        <option value="1">Sand</option>
+        <option value="2">Stone</option>
+        <option value="3">Water</option>
+      </select>
+    </label>
+
+    <script src="index.js"></script>
+    <script src="draw.js"></script>
+  </body>
+</html>
