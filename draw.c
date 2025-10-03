@@ -1,4 +1,5 @@
 #include "element.h"
+#include "randomize.h"
 #include <emscripten.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -11,6 +12,7 @@
 
 static uint32_t pixel_buffer[ELEMENT_COUNT];
 static Element elements[ELEMENT_COUNT];
+static int *randlet = NULL;
 
 Element *get_element_at(int x, int y) {
   if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
@@ -52,6 +54,9 @@ uint8_t *get_pixel_buffer() { return (uint8_t *)pixel_buffer; }
 
 EMSCRIPTEN_KEEPALIVE
 void init() {
+  srand(42);
+  randlet = generate_random_list(ELEMENT_COUNT);
+
   int y = 229;
   for (int x = 0; x < WIDTH; x++) {
     set_element_at(x, y, element(CONCRETE));
@@ -64,50 +69,51 @@ void create_element_at(int x, int y, ElementType type) {
 }
 
 void update_elements(int frame_number) {
-  for (int y = HEIGHT - 1; y >= 0; y--) {
-    for (int x = 0; x < WIDTH; x++) {
-      Element *el_ptr = get_element_at(x, y);
-      if (!el_ptr)
-        continue;
-      if (was_updated_on(el_ptr, frame_number)) {
-        continue;
+  for (int i = 0; i < ELEMENT_COUNT; i++) {
+    int j = randlet[i];
+    int y = i / WIDTH;
+    int x = i % WIDTH;
+    Element *el_ptr = get_element_at(x, y);
+    if (!el_ptr)
+      continue;
+    if (was_updated_on(el_ptr, frame_number)) {
+      continue;
+    }
+    switch (el_ptr->type) {
+    case SAND:
+      if (type_at(x, y + 1) == AIR || type_at(x, y + 1) == WATER) {
+        swap_elements_at(x, y, x, y + 1, frame_number);
+      } else if (type_at(x - 1, y + 1) == AIR ||
+                 type_at(x - 1, y + 1) == WATER) {
+        swap_elements_at(x, y, x - 1, y + 1, frame_number);
+      } else if (type_at(x + 1, y + 1) == AIR ||
+                 type_at(x + 1, y + 1) == WATER) {
+        swap_elements_at(x, y, x + 1, y + 1, frame_number);
       }
-      switch (el_ptr->type) {
-      case SAND:
-        if (type_at(x, y + 1) == AIR || type_at(x, y + 1) == WATER) {
-          swap_elements_at(x, y, x, y + 1, frame_number);
-        } else if (type_at(x - 1, y + 1) == AIR ||
-                   type_at(x - 1, y + 1) == WATER) {
-          swap_elements_at(x, y, x - 1, y + 1, frame_number);
-        } else if (type_at(x + 1, y + 1) == AIR ||
-                   type_at(x + 1, y + 1) == WATER) {
-          swap_elements_at(x, y, x + 1, y + 1, frame_number);
-        }
-        break;
-      case WATER:
-        if (type_at(x, y + 1) == AIR) {
-          swap_elements_at(x, y, x, y + 1, frame_number);
-        } else if (type_at(x - 1, y + 1) == AIR) {
-          swap_elements_at(x, y, x - 1, y + 1, frame_number);
-        } else if (type_at(x + 1, y + 1) == AIR) {
-          swap_elements_at(x, y, x + 1, y + 1, frame_number);
-        } else {
-          bool has_air_left = type_at(x - 1, y) == AIR;
-          bool has_air_right = type_at(x + 1, y) == AIR;
-          if (has_air_left) {
-            if (!has_air_right) {
-              swap_elements_at(x, y, x - 1, y, frame_number);
-            }
-          } else if (has_air_right) {
-            swap_elements_at(x, y, x + 1, y, frame_number);
+      break;
+    case WATER:
+      if (type_at(x, y + 1) == AIR) {
+        swap_elements_at(x, y, x, y + 1, frame_number);
+      } else if (type_at(x - 1, y + 1) == AIR) {
+        swap_elements_at(x, y, x - 1, y + 1, frame_number);
+      } else if (type_at(x + 1, y + 1) == AIR) {
+        swap_elements_at(x, y, x + 1, y + 1, frame_number);
+      } else {
+        bool has_air_left = type_at(x - 1, y) == AIR;
+        bool has_air_right = type_at(x + 1, y) == AIR;
+        if (has_air_left) {
+          if (!has_air_right) {
+            swap_elements_at(x, y, x - 1, y, frame_number);
           }
+        } else if (has_air_right) {
+          swap_elements_at(x, y, x + 1, y, frame_number);
         }
-        break;
-      case AIR:
-      case CONCRETE:
-      case ELEMENT_TYPE_COUNT:
-        break;
       }
+      break;
+    case AIR:
+    case CONCRETE:
+    case ELEMENT_TYPE_COUNT:
+      break;
     }
   }
 }

@@ -4,6 +4,7 @@ var Module = {
     const canvas = document.getElementById("my-canvas");
     /** @type {HTMLSelectElement} */
     const elementType = document.getElementById("element-type-select");
+    const stateButton = document.querySelector("#state");
     const ctx = canvas.getContext("2d");
     const WIDTH = canvas.width;
     const HEIGHT = canvas.height;
@@ -48,6 +49,19 @@ var Module = {
       animationFrame = requestAnimationFrame(renderLoop);
     }
 
+    function playPause() {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+        stateButton.textContent = "Paused";
+      } else {
+        animationFrame = requestAnimationFrame(renderLoop);
+        stateButton.textContent = "Playing";
+      }
+    }
+
+    playPause();
+
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
@@ -61,17 +75,10 @@ var Module = {
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === " ") {
-        if (animationFrame) {
-          cancelAnimationFrame(animationFrame);
-          animationFrame = 0;
-        } else {
-          animationFrame = requestAnimationFrame(renderLoop);
-        }
-        document.querySelector("#state").textContent = animationFrame
-          ? "Playing"
-          : "Paused";
-      }
+      if (e.key === " ") playPause();
+    });
+    stateButton.addEventListener("click", (e) => {
+      playPause();
     });
   },
 };
